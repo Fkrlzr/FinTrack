@@ -1,6 +1,8 @@
 package com.fintrack.ui.dashboard
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -62,11 +65,13 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = viewModel::onAddClick,
+                modifier = Modifier.border(2.dp, MaterialTheme.colorScheme.outline),
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = MaterialTheme.shapes.small,
+                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
             ) {
-                Text("Add transaction", style = MaterialTheme.typography.labelLarge)
+                Text("ADD TRANSACTION", style = MaterialTheme.typography.labelLarge)
             }
         },
     ) { padding ->
@@ -116,12 +121,9 @@ private fun DashboardContent(
             bottom = contentPadding.calculateBottomPadding() + 88.dp,
         ),
     ) {
-        item(key = "filters") {
-            FilterBar(state, onPreviousMonth, onNextMonth, onCategoryFilter)
-        }
-        item(key = "summary") {
-            SummarySection(state, Modifier.padding(top = 12.dp, bottom = 12.dp))
-        }
+        item(key = "month") { MonthBar(state, onPreviousMonth, onNextMonth) }
+        item(key = "summary") { SummarySection(state) }
+        item(key = "chart") { ChartCard(state, onCategoryFilter, Modifier.padding(vertical = 8.dp)) }
         when (state.status) {
             LoadStatus.LOADING -> item(key = "loading") {
                 Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
@@ -131,9 +133,9 @@ private fun DashboardContent(
 
             LoadStatus.ERROR -> item(key = "error") {
                 StateMessage(
-                    title = "Could not read your transactions",
+                    title = "COULD NOT READ YOUR TRANSACTIONS",
                     body = "The local database failed to load.",
-                    actionLabel = "Retry",
+                    actionLabel = "RETRY",
                     onAction = onRetry,
                 )
             }
@@ -142,7 +144,7 @@ private fun DashboardContent(
                 item(key = "empty") {
                     val filtered = state.categoryFilter != null
                     StateMessage(
-                        title = if (filtered) "Nothing in ${state.categoryFilter?.label}" else "No transactions this month",
+                        title = if (filtered) "NOTHING IN ${state.categoryFilter?.label?.uppercase()}" else "NO TRANSACTIONS THIS MONTH",
                         body = if (filtered) "Pick All to see every category." else "Tap Add transaction to log your first one.",
                     )
                 }
@@ -187,7 +189,11 @@ private fun StateMessage(
         )
         if (actionLabel != null && onAction != null) {
             Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = onAction, shape = MaterialTheme.shapes.small) { Text(actionLabel) }
+            OutlinedButton(
+                onClick = onAction,
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+            ) { Text(actionLabel, color = MaterialTheme.colorScheme.onBackground) }
         }
     }
 }

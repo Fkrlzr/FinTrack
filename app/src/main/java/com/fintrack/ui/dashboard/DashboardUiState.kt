@@ -16,6 +16,10 @@ data class DayGroup(
     val items: List<Transaction>,
 )
 
+/** Income and expense totals for one calendar day of the selected month. */
+@Immutable
+data class DayFlow(val day: Int, val incomeMinor: Long, val expenseMinor: Long)
+
 sealed interface EditorTarget {
     data object New : EditorTarget
     data class Edit(val transaction: Transaction) : EditorTarget
@@ -30,6 +34,7 @@ data class DashboardUiState(
     val expenseMinor: Long = 0,
     val categoryFilter: Category? = null,
     val days: List<DayGroup> = emptyList(),
+    val chart: List<DayFlow> = emptyList(),
     val editor: EditorTarget? = null,
 ) {
     val isCurrentMonth: Boolean get() = month >= YearMonth.now()

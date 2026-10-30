@@ -33,7 +33,6 @@ private sealed interface Load {
     data object Loading : Load
     data object Failed : Load
     data class Ready(
-        val balanceMinor: Long,
         val totals: MonthTotals,
         val transactions: List<Transaction>,
     ) : Load
@@ -55,11 +54,10 @@ class DashboardViewModel(
     private val load: Flow<Load> = combine(month, retryTick) { m, _ -> m }
         .flatMapLatest { m ->
             val (start, end) = monthRangeMillis(m)
-            combine<Long, MonthTotals, List<Transaction>, Load>(
-                repository.observeBalance(),
+            combine<MonthTotals, List<Transaction>, Load>(
                 repository.observeTotals(start, end),
                 repository.observeTransactions(start, end),
-            ) { balance, totals, list -> Load.Ready(balance, totals, list) }
+            ) { totals, list -> Load.Ready(totals, list) }
                 .onStart { emit(Load.Loading) }
                 .catch { emit(Load.Failed) }
         }
@@ -72,10 +70,11 @@ class DashboardViewModel(
                 Load.Failed -> base.copy(status = LoadStatus.ERROR)
                 is Load.Ready -> base.copy(
                     status = LoadStatus.READY,
-                    balanceMinor = state.balanceMinor,
+                    balanceMinor = state.totals.incomeMinor - state.totals.expenseMinor,
                     incomeMinor = state.totals.incomeMinor,
                     expenseMinor = state.totals.expenseMinor,
                     days = groupByDay(state.transactions, filter),
+                    chart = buildChart(m, state.transactions, filter),
                 )
             }
         }.stateIn(
@@ -134,6 +133,19 @@ class DashboardViewModel(
 
     fun onUndoDelete(transaction: Transaction) {
         viewModelScope.launch { repository.upsert(transaction) }
+    }
+
+    private fun buildChart(month: YearMonth, list: List<Transaction>, filter: Category?): List<DayFlow> {
+        val byDay = list.filter { filter == null || it.category == filter }
+            .groupBy { millisToLocalDate(it.dateMillis).dayOfMonth }
+        return (1..month.lengthOfMonth()).map { day ->
+            val items = byDay[day].orEmpty()
+            DayFlow(
+                day = day,
+                incomeMinor = items.filter { it.type == TransactionType.INCOME }.sumOf { it.amountMinor },
+                expenseMinor = items.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amountMinor },
+            )
+        }
     }
 
     private fun groupByDay(list: List<Transaction>, filter: Category?): List<DayGroup> =

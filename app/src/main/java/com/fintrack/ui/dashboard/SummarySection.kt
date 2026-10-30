@@ -1,13 +1,13 @@
 package com.fintrack.ui.dashboard
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -26,28 +26,37 @@ fun SummarySection(
     state: DashboardUiState,
     modifier: Modifier = Modifier,
 ) {
-    val monthLabel = formatShortMonth(state.month)
+    val monthLabel = formatShortMonth(state.month).uppercase()
+    val ink = MaterialTheme.colorScheme.onBackground
+    val paper = MaterialTheme.colorScheme.background
     Column(modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Inverted block: the one focal point on the screen.
         SummaryCell(
-            label = "Total balance",
+            label = "BALANCE, $monthLabel",
             value = formatMoney(state.balanceMinor),
             valueStyle = Money.Hero,
-            valueColor = MaterialTheme.colorScheme.onSurface,
+            labelColor = paper,
+            valueColor = paper,
+            containerColor = ink,
             modifier = Modifier.fillMaxWidth(),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             SummaryCell(
-                label = "Income, $monthLabel",
+                label = "INCOME",
                 value = formatSigned(state.incomeMinor, TransactionType.INCOME),
                 valueStyle = Money.Large,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 valueColor = MaterialTheme.finTrack.incomeText,
+                containerColor = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.weight(1f),
             )
             SummaryCell(
-                label = "Expense, $monthLabel",
+                label = "EXPENSE",
                 value = formatSigned(state.expenseMinor, TransactionType.EXPENSE),
                 valueStyle = Money.Large,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 valueColor = MaterialTheme.finTrack.expenseText,
+                containerColor = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -59,28 +68,24 @@ private fun SummaryCell(
     label: String,
     value: String,
     valueStyle: TextStyle,
+    labelColor: Color,
     valueColor: Color,
+    containerColor: Color,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    Column(
+        modifier = modifier
+            .background(containerColor)
+            .border(2.dp, MaterialTheme.colorScheme.outline)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = value,
-                style = valueStyle,
-                color = valueColor,
-                maxLines = 1,
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = labelColor)
+        Text(
+            text = value,
+            style = valueStyle,
+            color = valueColor,
+            maxLines = 1,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }

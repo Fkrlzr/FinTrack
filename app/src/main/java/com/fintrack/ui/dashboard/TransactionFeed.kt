@@ -41,15 +41,15 @@ fun DayHeader(group: DayGroup, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            text = formatDayHeader(group.date, LocalDate.now()),
+            text = formatDayHeader(group.date, LocalDate.now()).uppercase(),
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
         )
         Text(
             text = formatNet(group.netMinor),
@@ -57,7 +57,7 @@ fun DayHeader(group: DayGroup, modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    HorizontalDivider(thickness = 2.dp, color = MaterialTheme.colorScheme.outline)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

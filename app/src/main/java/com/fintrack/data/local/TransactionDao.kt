@@ -17,12 +17,6 @@ interface TransactionDao {
     fun observeInRange(startMillis: Long, endMillis: Long): Flow<List<TransactionEntity>>
 
     @Query(
-        "SELECT COALESCE(SUM(CASE WHEN type = 'INCOME' THEN amountMinor ELSE -amountMinor END), 0) " +
-            "FROM transactions"
-    )
-    fun observeBalance(): Flow<Long>
-
-    @Query(
         "SELECT COALESCE(SUM(amountMinor), 0) FROM transactions " +
             "WHERE type = :type AND dateMillis >= :startMillis AND dateMillis < :endMillis"
     )

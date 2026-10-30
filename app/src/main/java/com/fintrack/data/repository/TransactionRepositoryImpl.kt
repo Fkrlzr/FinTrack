@@ -15,8 +15,6 @@ class TransactionRepositoryImpl(
     private val dao: TransactionDao,
 ) : TransactionRepository {
 
-    override fun observeBalance(): Flow<Long> = dao.observeBalance()
-
     override fun observeTotals(startMillis: Long, endMillis: Long): Flow<MonthTotals> =
         combine(
             dao.observeSum(TransactionType.INCOME.name, startMillis, endMillis),

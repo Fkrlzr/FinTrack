@@ -1,7 +1,9 @@
 package com.fintrack.ui.editor
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -11,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -29,8 +32,10 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -56,12 +61,16 @@ import com.fintrack.domain.model.TransactionType
 import com.fintrack.ui.dashboard.TransactionDraft
 import com.fintrack.ui.format.formatFullDate
 import com.fintrack.ui.format.formatPlainAmount
+import com.fintrack.ui.format.formatTime
+import com.fintrack.ui.format.millisToHour
 import com.fintrack.ui.format.millisToLocalDate
+import com.fintrack.ui.format.millisToMinute
 import com.fintrack.ui.format.parseAmount
 import com.fintrack.ui.format.pickerMillisToLocalDate
 import com.fintrack.ui.format.sanitizeAmountInput
 import com.fintrack.ui.format.toPickerMillis
 import com.fintrack.ui.format.withLocalDate
+import com.fintrack.ui.format.withLocalTime
 import com.fintrack.ui.theme.Money
 import com.fintrack.ui.theme.finTrack
 import kotlinx.coroutines.flow.first
@@ -88,6 +97,7 @@ fun TransactionEditorSheet(
     var note by rememberSaveable { mutableStateOf(initial?.note.orEmpty()) }
     var dateMillis by rememberSaveable { mutableStateOf(initial?.dateMillis ?: System.currentTimeMillis()) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     val amountMinor = parseAmount(amountText)
 
@@ -122,8 +132,8 @@ fun TransactionEditorSheet(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = if (initial == null) "New transaction" else "Edit transaction",
-                style = MaterialTheme.typography.titleMedium,
+                text = if (initial == null) "NEW TRANSACTION" else "EDIT TRANSACTION",
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
 
@@ -160,15 +170,27 @@ fun TransactionEditorSheet(
                 keyboardActions = KeyboardActions(onDone = { keyboard?.hide() }),
             )
 
-            OutlinedButton(
-                onClick = { showDatePicker = true },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = MaterialTheme.shapes.small,
-            ) {
-                Text(
-                    text = "Date: " + formatFullDate(millisToLocalDate(dateMillis)),
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { showDatePicker = true },
+                    modifier = Modifier.weight(3f).height(52.dp),
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(
+                        text = formatFullDate(millisToLocalDate(dateMillis)),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                }
+                OutlinedButton(
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.weight(2f).height(52.dp),
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(text = formatTime(dateMillis), color = MaterialTheme.colorScheme.onSurface)
+                }
             }
 
             Button(
@@ -176,15 +198,39 @@ fun TransactionEditorSheet(
                 enabled = amountMinor != null,
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = MaterialTheme.shapes.small,
+                border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) {
-                val verb = if (initial == null) "Save" else "Update"
-                Text("$verb ${type.name.lowercase()}")
+                val verb = if (initial == null) "SAVE" else "UPDATE"
+                Text("$verb ${type.name}")
             }
         }
+    }
+
+    if (showTimePicker) {
+        val timeState = rememberTimePickerState(
+            initialHour = millisToHour(dateMillis),
+            initialMinute = millisToMinute(dateMillis),
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            shape = MaterialTheme.shapes.small,
+            containerColor = MaterialTheme.colorScheme.surface,
+            text = { TimePicker(state = timeState) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        dateMillis = withLocalTime(dateMillis, timeState.hour, timeState.minute)
+                        showTimePicker = false
+                    },
+                ) { Text("SET TIME") }
+            },
+            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("CANCEL") } },
+        )
     }
 
     if (showDatePicker) {
@@ -201,9 +247,9 @@ fun TransactionEditorSheet(
                         }
                         showDatePicker = false
                     },
-                ) { Text("Set date") }
+                ) { Text("SET DATE") }
             },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("CANCEL") } },
         ) {
             DatePicker(state = pickerState)
         }
@@ -230,7 +276,7 @@ private fun TypeToggle(selected: TransactionType, onSelect: (TransactionType) ->
                     inactiveBorderColor = MaterialTheme.colorScheme.outline,
                 ),
                 icon = {},
-                label = { Text(if (option == TransactionType.INCOME) "Income" else "Expense") },
+                label = { Text(if (option == TransactionType.INCOME) "INCOME" else "EXPENSE", style = MaterialTheme.typography.labelMedium) },
             )
         }
     }

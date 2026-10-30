@@ -77,3 +77,26 @@ fun formatFullDate(date: LocalDate): String = date.format(fullDayFormatter)
 fun formatMonth(month: YearMonth): String = month.format(monthFormatter)
 
 fun formatShortMonth(month: YearMonth): String = month.format(shortMonthFormatter)
+
+/** "Rp 1,5jt", "Rp 250rb". Used where space is tight, such as chart axes. */
+fun formatCompact(amount: Long): String {
+    fun trim(value: Double) = DecimalFormat("0.#", idSymbols).format(value)
+    return when {
+        amount >= 1_000_000_000 -> "Rp " + trim(amount / 1_000_000_000.0) + "M"
+        amount >= 1_000_000 -> "Rp " + trim(amount / 1_000_000.0) + "jt"
+        amount >= 1_000 -> "Rp " + trim(amount / 1_000.0) + "rb"
+        else -> "Rp $amount"
+    }
+}
+
+private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault())
+
+fun formatTime(millis: Long): String = Instant.ofEpochMilli(millis).atZone(zone).toLocalTime().format(timeFormatter)
+
+/** Moves [millis] to [hour]:[minute] on its local date. */
+fun withLocalTime(millis: Long, hour: Int, minute: Int): Long =
+    Instant.ofEpochMilli(millis).atZone(zone).toLocalDate().atTime(hour, minute).atZone(zone).toInstant().toEpochMilli()
+
+fun millisToHour(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(zone).hour
+
+fun millisToMinute(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(zone).minute

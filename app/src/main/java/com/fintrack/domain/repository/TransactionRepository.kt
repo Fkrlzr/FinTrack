@@ -5,9 +5,6 @@ import com.fintrack.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {
-    /** Income minus expense across all time. */
-    fun observeBalance(): Flow<Long>
-
     /** Range is [startMillis, endMillis). */
     fun observeTotals(startMillis: Long, endMillis: Long): Flow<MonthTotals>
 
