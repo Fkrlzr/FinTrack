@@ -21,6 +21,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            // Signed with the debug key so the release build installs for local testing. Use a real keystore before publishing.
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
