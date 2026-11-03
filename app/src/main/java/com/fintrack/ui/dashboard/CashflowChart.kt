@@ -31,7 +31,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
-import com.fintrack.domain.model.Category
 import com.fintrack.ui.format.formatCompact
 import com.fintrack.ui.format.formatMonth
 import com.fintrack.ui.format.formatNet
@@ -46,7 +45,7 @@ private val AxisHeight = 18.dp
 @Composable
 fun ChartCard(
     state: DashboardUiState,
-    onCategoryFilter: (Category?) -> Unit,
+    onCategoryFilter: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -59,12 +58,12 @@ fun ChartCard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            text = "DAILY FLOW" + (state.categoryFilter?.let { ", ${it.label.uppercase()}" } ?: ""),
+            text = "DAILY FLOW" + (state.categoryFilter?.let { ", ${state.labelOf(it).uppercase()}" } ?: ""),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 14.dp),
         )
-        CategoryChips(selected = state.categoryFilter, onSelect = onCategoryFilter)
+        CategoryChips(categories = state.categories, selected = state.categoryFilter, onSelect = onCategoryFilter)
         CashflowChart(days = state.chart, month = state.month, modifier = Modifier.padding(horizontal = 14.dp))
         Row(
             modifier = Modifier.padding(horizontal = 14.dp),

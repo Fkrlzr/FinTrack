@@ -18,12 +18,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -56,8 +52,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.fintrack.domain.model.Category
+import com.fintrack.domain.model.DEFAULT_WALLET_ID
+import com.fintrack.domain.model.FALLBACK_CATEGORY_ID
 import com.fintrack.domain.model.Transaction
 import com.fintrack.domain.model.TransactionType
+import com.fintrack.domain.model.WalletSummary
+import com.fintrack.ui.common.DropdownField
 import com.fintrack.ui.dashboard.TransactionDraft
 import com.fintrack.ui.format.formatFullDate
 import com.fintrack.ui.format.formatPlainAmount
@@ -82,6 +82,8 @@ private const val MAX_NOTE_LENGTH = 80
 @Composable
 fun TransactionEditorSheet(
     initial: Transaction?,
+    categories: List<Category>,
+    wallets: List<WalletSummary>,
     onSave: (TransactionDraft) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -93,7 +95,12 @@ fun TransactionEditorSheet(
 
     var amountText by rememberSaveable { mutableStateOf(initial?.let { formatPlainAmount(it.amountMinor) }.orEmpty()) }
     var type by rememberSaveable { mutableStateOf(initial?.type ?: TransactionType.EXPENSE) }
-    var category by rememberSaveable { mutableStateOf(initial?.category ?: Category.FOOD) }
+    var categoryId by rememberSaveable {
+        mutableStateOf(initial?.categoryId ?: categories.firstOrNull()?.id ?: FALLBACK_CATEGORY_ID)
+    }
+    var walletId by rememberSaveable {
+        mutableStateOf(initial?.walletId ?: wallets.firstOrNull()?.wallet?.id ?: DEFAULT_WALLET_ID)
+    }
     var note by rememberSaveable { mutableStateOf(initial?.note.orEmpty()) }
     var dateMillis by rememberSaveable { mutableStateOf(initial?.dateMillis ?: System.currentTimeMillis()) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
@@ -111,7 +118,7 @@ fun TransactionEditorSheet(
     fun save() {
         val minor = amountMinor ?: return
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-        val draft = TransactionDraft(initial?.id ?: 0, minor, type, category, note, dateMillis)
+        val draft = TransactionDraft(initial?.id ?: 0, minor, type, categoryId, walletId, note, dateMillis)
         scope.launch { sheetState.hide() }.invokeOnCompletion { onSave(draft) }
     }
 
@@ -157,7 +164,19 @@ fun TransactionEditorSheet(
                 },
             )
 
-            CategoryDropdown(selected = category, onSelect = { category = it })
+            DropdownField(
+                label = "Category",
+                selectedLabel = categories.firstOrNull { it.id == categoryId }?.label.orEmpty(),
+                options = categories.map { it.id to it.label },
+                onSelect = { categoryId = it },
+            )
+
+            DropdownField(
+                label = "Wallet",
+                selectedLabel = wallets.firstOrNull { it.wallet.id == walletId }?.wallet?.name.orEmpty(),
+                options = wallets.map { it.wallet.id to it.wallet.name },
+                onSelect = { walletId = it },
+            )
 
             OutlinedTextField(
                 value = note,
@@ -173,7 +192,7 @@ fun TransactionEditorSheet(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = { showDatePicker = true },
-                    modifier = Modifier.weight(3f).height(52.dp),
+                    modifier = Modifier.weight(3f).height(48.dp),
                     shape = MaterialTheme.shapes.small,
                     border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
                 ) {
@@ -185,7 +204,7 @@ fun TransactionEditorSheet(
                 }
                 OutlinedButton(
                     onClick = { showTimePicker = true },
-                    modifier = Modifier.weight(2f).height(52.dp),
+                    modifier = Modifier.weight(2f).height(48.dp),
                     shape = MaterialTheme.shapes.small,
                     border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
                 ) {
@@ -196,7 +215,7 @@ fun TransactionEditorSheet(
             Button(
                 onClick = ::save,
                 enabled = amountMinor != null,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(48.dp),
                 shape = MaterialTheme.shapes.small,
                 border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
                 colors = ButtonDefaults.buttonColors(
@@ -262,7 +281,11 @@ private fun TypeToggle(selected: TransactionType, onSelect: (TransactionType) ->
     val options = listOf(TransactionType.EXPENSE, TransactionType.INCOME)
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, option ->
-            val fill = if (option == TransactionType.INCOME) MaterialTheme.finTrack.incomeFill else MaterialTheme.finTrack.expenseFill
+            val fill = if (option == TransactionType.INCOME) {
+                MaterialTheme.finTrack.incomeFill
+            } else {
+                MaterialTheme.finTrack.expenseFill
+            }
             SegmentedButton(
                 selected = selected == option,
                 onClick = { onSelect(option) },
@@ -276,38 +299,13 @@ private fun TypeToggle(selected: TransactionType, onSelect: (TransactionType) ->
                     inactiveBorderColor = MaterialTheme.colorScheme.outline,
                 ),
                 icon = {},
-                label = { Text(if (option == TransactionType.INCOME) "INCOME" else "EXPENSE", style = MaterialTheme.typography.labelMedium) },
+                label = {
+                    Text(
+                        if (option == TransactionType.INCOME) "INCOME" else "EXPENSE",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                },
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoryDropdown(selected: Category, onSelect: (Category) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(
-            value = selected.label,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Category") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-        )
-        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            Category.entries.forEach { category ->
-                DropdownMenuItem(
-                    text = { Text(category.label) },
-                    onClick = {
-                        onSelect(category)
-                        expanded = false
-                    },
-                )
-            }
         }
     }
 }

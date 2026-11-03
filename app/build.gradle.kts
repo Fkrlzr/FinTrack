@@ -57,5 +57,7 @@ dependencies {
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.fragment)
     ksp(libs.androidx.room.compiler)
 }

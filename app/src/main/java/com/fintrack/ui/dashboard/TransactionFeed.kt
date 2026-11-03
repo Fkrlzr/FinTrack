@@ -93,7 +93,7 @@ fun SwipeToDeleteRow(
                     .padding(end = 20.dp),
                 contentAlignment = Alignment.CenterEnd,
             ) {
-                Text("Delete", style = MaterialTheme.typography.labelMedium, color = Color.White)
+                Text("DELETE", style = MaterialTheme.typography.labelMedium, color = Color.White)
             }
         },
         content = { content() },
@@ -103,6 +103,7 @@ fun SwipeToDeleteRow(
 @Composable
 fun TransactionRow(
     transaction: Transaction,
+    categoryLabel: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -125,7 +126,7 @@ fun TransactionRow(
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = transaction.category.label,
+                    text = categoryLabel,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,

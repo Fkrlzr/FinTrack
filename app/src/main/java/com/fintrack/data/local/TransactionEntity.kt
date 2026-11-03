@@ -1,9 +1,9 @@
 package com.fintrack.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.fintrack.domain.model.Category
 import com.fintrack.domain.model.Transaction
 import com.fintrack.domain.model.TransactionType
 
@@ -16,15 +16,21 @@ data class TransactionEntity(
     val amountMinor: Long,
     val type: String,
     val category: String,
+    @ColumnInfo(defaultValue = "1") val walletId: Long,
     val note: String,
     val dateMillis: Long,
 )
+
+data class CategorySumRow(val categoryId: String, val expenseMinor: Long)
+
+data class WalletNetRow(val walletId: Long, val netMinor: Long)
 
 fun TransactionEntity.toDomain() = Transaction(
     id = id,
     amountMinor = amountMinor,
     type = TransactionType.valueOf(type),
-    category = Category.valueOf(category),
+    categoryId = category,
+    walletId = walletId,
     note = note,
     dateMillis = dateMillis,
 )
@@ -33,7 +39,8 @@ fun Transaction.toEntity() = TransactionEntity(
     id = id,
     amountMinor = amountMinor,
     type = type.name,
-    category = category.name,
+    category = categoryId,
+    walletId = walletId,
     note = note,
     dateMillis = dateMillis,
 )
