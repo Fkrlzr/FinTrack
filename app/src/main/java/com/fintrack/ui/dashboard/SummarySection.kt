@@ -18,6 +18,7 @@ import com.fintrack.domain.model.TransactionType
 import com.fintrack.ui.format.formatMoney
 import com.fintrack.ui.format.formatShortMonth
 import com.fintrack.ui.format.formatSigned
+import com.fintrack.ui.common.FitText
 import com.fintrack.ui.theme.Money
 import com.fintrack.ui.theme.finTrack
 
@@ -80,12 +81,11 @@ private fun SummaryCell(
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = labelColor)
-        Text(
+        FitText(
             text = value,
             style = valueStyle,
             color = valueColor,
-            maxLines = 1,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = 4.dp).fillMaxWidth(),
         )
     }
 }
